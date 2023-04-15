@@ -18,7 +18,7 @@ module.exports = {
       if (!user) throw Error("Error XyZ");
 
       if (user.admin !== undefined || user.email !== undefined) {
-        response
+        return response
           .status(400)
           .json("Os dados não podem ser atualizados, apenas com chamado");
       }
@@ -51,6 +51,12 @@ module.exports = {
 
       const checkExists = await User.findOne({ email: user.email });
 
+      // if (user.admin === false) {
+      //   return response
+      //     .status(401)
+      //     .json("Você não tem acesso suficiente para criar um usuário!");
+      // }
+
       if (checkExists) {
         response.status(400).send("E-mail ja criado");
       }
@@ -61,12 +67,6 @@ module.exports = {
 
       if (!user) {
         response.status(400).send("Dados vazios");
-      }
-
-      if (user.admin === false) {
-        response
-          .status(401)
-          .json("Você não tem acesso suficiente para criar um usuário!");
       }
 
       const finalResponse = await User.create(user);
@@ -87,18 +87,24 @@ module.exports = {
 
   async deleteUser(request, response) {
     try {
-      const id = request.query.id;
-      const user = await User.findByIdAndRemove(id);
+      const id = request.body.id;
+
+      const userNo = await User.findById(id);
 
       const userAdmin = {
         admin: request.body.admin,
       };
 
-      if (userAdmin.admin !== true) {
-        response
+      if (!userNo) {
+        return response.status(404).json("Usuário não encontrado");
+      }
+
+      if (!userAdmin || userAdmin.admin !== true) {
+        return response
           .status(401)
           .json("Você não tem permissão para deletar um usuário");
       }
+      const user = await User.findByIdAndRemove(id);
 
       response.json(user);
     } catch (error) {
