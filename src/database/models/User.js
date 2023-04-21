@@ -20,12 +20,18 @@ const UserModel = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    role: {
+      type: String,
+      required: true,
+      enum: ["user", "admin", "mestre"],
+      default: "user",
+    },
   },
   { timestamps: true }
 );
 
 UserModel.plugin(uniqueValidator);
 
-const Users = mongoose.model("User", UserModel);
+const User = mongoose.model("User", UserModel);
 
-module.exports = Users;
+module.exports = User;

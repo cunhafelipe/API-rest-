@@ -10,4 +10,6 @@ router
   .patch(UserController.updateUser)
   .delete(UserController.deleteUser);
 
+router.get("/clients", UserController.findClients);
+
 module.exports = router;

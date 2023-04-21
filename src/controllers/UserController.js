@@ -1,10 +1,13 @@
-const User = require("../models/User");
-const userSchema = require("../middleware/joi");
-const createValidator = require("../helpers/validate");
+const { User, Client } = require("../database/models");
+const logger = require("../middlewares/logs/logger");
 
-// let validator = () => createValidator(userSchema);
+const mockUserLogged = {
+  id: "12345576128372hfhsglsng-sbdsfjdsfsdfjh29",
+  name: "Felipe Cunha",
+  admin: false,
+};
 
-module.exports = {
+class UserController {
   async updateUser(request, response) {
     try {
       const user = {
@@ -27,18 +30,18 @@ module.exports = {
 
       response.json(update);
     } catch (error) {
-      console.log(error);
+      logger.error(error);
     }
-  },
+  }
 
   async readUser(request, response) {
     try {
       const email = await User.findOne({ email: request.body.email });
       response.json(email);
     } catch (error) {
-      console.log(error);
+      logger.error(error);
     }
-  },
+  }
 
   async createUser(request, response) {
     try {
@@ -51,11 +54,9 @@ module.exports = {
 
       const checkExists = await User.findOne({ email: user.email });
 
-      // if (user.admin === false) {
-      //   return response
-      //     .status(401)
-      //     .json("Você não tem acesso suficiente para criar um usuário!");
-      // }
+      if (mockUserLogged && mockUserLogged.admin !== true) {
+        response.status(401).json("Sem acesso suficiente");
+      }
 
       if (checkExists) {
         response.status(400).send("E-mail ja criado");
@@ -69,46 +70,56 @@ module.exports = {
         response.status(400).send("Dados vazios");
       }
 
-      const finalResponse = await User.create(user);
-      response.status(201).json(finalResponse);
+      return await User.create(user).then((userCreate) => {
+        response.status(200).json(userCreate);
+      });
     } catch (error) {
       response.status(500).send(error.message);
     }
-  },
+  }
 
   async findUsers(_request, response) {
     try {
       const user = await User.find();
       response.json(user);
     } catch (error) {
-      console.log(error);
+      logger.error(error);
     }
-  },
+  }
 
   async deleteUser(request, response) {
     try {
       const id = request.body.id;
 
-      const userNo = await User.findById(id);
+      const findUserById = await User.findById(id);
 
-      const userAdmin = {
-        admin: request.body.admin,
-      };
-
-      if (!userNo) {
-        return response.status(404).json("Usuário não encontrado");
+      if (!findUserById) {
+        return response.json({ message: "Nao existem registros" });
       }
 
-      if (!userAdmin || userAdmin.admin !== true) {
+      if (mockUserLogged && mockUserLogged.admin === true) {
+        await User.findByIdAndRemove(findUserById).then((userDeleted) => {
+          return response.json(userDeleted);
+        });
+      } else {
         return response
           .status(401)
-          .json("Você não tem permissão para deletar um usuário");
+          .json({ message: "Voce nao tem permissao suficiente" });
       }
-      const user = await User.findByIdAndRemove(id);
-
-      response.json(user);
     } catch (error) {
-      console.log(error);
+      logger.error(error);
     }
-  },
-};
+  }
+
+  async findClients(_request, response) {
+    try {
+      const clients = await Client.find();
+      response.json(clients);
+    } catch (error) {
+      logger.error(error);
+      response.status(500).json({ message: "Erro ao buscar clientes" });
+    }
+  }
+}
+
+module.exports = new UserController();

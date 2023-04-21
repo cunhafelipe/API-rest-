@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const logger = require("../middlewares/logs/logger");
 require("dotenv").config();
 
 const connectToDatabase = async () => {
@@ -6,9 +7,9 @@ const connectToDatabase = async () => {
     await mongoose.connect(
       `mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWORD}@exerafa2.njdbd4g.mongodb.net/?retryWrites=true&w=majority`
     );
-    console.log("Conectado ao banco de dados");
+    logger.info("Conectado ao banco de dados");
   } catch (error) {
-    console.log(`Erro: `, error);
+    logger.warn(error);
   }
 };
 
